@@ -39,13 +39,13 @@ jobs:
         with:
           github_token: ${{ secrets.PAT }}
           repo: joveryz/dive-log-exporter
-          workflow: dotnet-desktop.yml
-          name: dive-log-exporter
+          workflow: build.yml
+          name: DiveLogExporter
           path: ./exporter
 
-      - name: Run dive-log-exporter
+      - name: Run DiveLogExporter.exe
         run: |
-          ./exporter/DiveLogExporter.exe --input ./src/data ./exporter
+          ./exporter/DiveLogExporter.exe ./src/data ./exporter
         shell: pwsh
 
       - name: Upload exported data
