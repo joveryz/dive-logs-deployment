@@ -28,10 +28,14 @@ jobs:
   prepare:
     runs-on: windows-latest
 
-    steps:    
-      - name: Checkout
+    steps:
+      - name: Checkout Site Data
         uses: actions/checkout@v4
         with:
+          repository: joveryz/dive-logs
+          ref: master
+          token: ${{ secrets.PAT }}
+          path: ./
           fetch-depth: 0
 
       - name: Download artifact from dive-log-exporter
