@@ -25,9 +25,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  prepare:
+    runs-on: windows-latest
+
+    steps:    
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifact from dive-log-exporter
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.PAT }}
+          repo: joveryz/dive-log-exporter
+          workflow: dotnet-desktop.yml
+          name: dive-log-exporter
+          path: ./exporter
+
+      - name: Run dive-log-exporter
+        run: |
+          ./exporter/DiveLogExporter.exe --input ./src/data ./exporter
+        shell: pwsh
+
+      - name: Upload exported data
+        uses: actions/upload-artifact@v4
+        with:
+          name: exported-dive-logs
+          path: ./exporter/*.csv
+
   build:
     runs-on: ubuntu-latest
-
+    needs: prepare
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,6 +71,12 @@ jobs:
           token: ${{ secrets.PAT }}
           path: ./
           fetch-depth: 0
+
+      - name: Download exported dive logs
+        uses: actions/download-artifact@v4
+        with:
+          name: exported-dive-logs
+          path: ./src/data
 
       - name: Setup Node
         uses: actions/setup-node@v4
