@@ -71,7 +71,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout Site Data
+      - name: Checkout site data
         uses: actions/checkout@v4
         with:
           repository: joveryz/dive-logs
@@ -80,7 +80,7 @@ jobs:
           path: ./
           fetch-depth: 0
 
-      - name: Download exported dive logs
+      - name: Download Exported Dive Logs
         uses: actions/download-artifact@v4
         with:
           name: exported-dive-logs
@@ -92,7 +92,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm ci
 
       - name: Build
@@ -102,7 +102,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
 
-      - name: Upload site artifact
+      - name: Upload Site Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
@@ -117,3 +117,29 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [prepare, build, deploy]
+    if: always()
+    steps:
+      - name: Send Notification
+        run: |
+          status_icon() {
+            case "$1" in
+              success) echo "✅";;
+              failure) echo "❌";;
+              skipped) echo "⏭️";;
+              cancelled) echo "🚫";;
+              *) echo "$1";;
+            esac
+          }
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            curl -s "https://api.day.app/${{ secrets.BARK_TOKEN }}/Github-DiveLogs/%23${{ github.run_id }}%20%E2%9C%85"
+          else
+            PREPARE=$(status_icon "${{ needs.prepare.result }}")
+            BUILD=$(status_icon "${{ needs.build.result }}")
+            DEPLOY=$(status_icon "${{ needs.deploy.result }}")
+            BODY=$(echo "#${{ github.run_id }} ❌ (Prepare:${PREPARE} Build:${BUILD} Deploy:${DEPLOY})" | jq -sRr @uri)
+            curl -s "https://api.day.app/${{ secrets.BARK_TOKEN }}/Github-DiveLogs/${BODY}"
+          fi
